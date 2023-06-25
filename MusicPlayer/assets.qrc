@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>assets/circle.png</file>
+        <file>assets/circle1.png</file>
+        <file>assets/document.png</file>
+        <file>assets/download.png</file>
+        <file>assets/jinDu.png</file>
+        <file>assets/last.png</file>
+        <file>assets/list.png</file>
+        <file>assets/next.png</file>
+        <file>assets/pause.png</file>
+        <file>assets/random.png</file>
+        <file>assets/volume.png</file>
+        <file>assets/point (1).png</file>
+        <file>assets/music_icon.png</file>
+    </qresource>
+</RCC>
