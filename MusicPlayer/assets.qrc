@@ -13,5 +13,7 @@
         <file>assets/volume.png</file>
         <file>assets/point (1).png</file>
         <file>assets/music_icon.png</file>
+        <file>assets/bofang2.png</file>
+        <file>assets/bofang3.png</file>
     </qresource>
 </RCC>

@@ -1,4 +1,4 @@
-QT       += core gui multimedia
+QT       += core gui multimedia network sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -27,5 +27,6 @@ RESOURCES += \
     assets.qrc
 
 DISTFILES += \
+    assets/boFang.png \
     assets/music_icon.png \
     assets/point (1).png

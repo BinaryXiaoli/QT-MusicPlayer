@@ -2,7 +2,10 @@
 #include "ui_widget.h"
 #include <QDir>
 #include <QMediaPlayer>
-#include <QAudioOutput>
+
+
+using namespace  std ;
+
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -10,11 +13,13 @@ Widget::Widget(QWidget *parent)
 {
     ui->setupUi(this);
 
-    //播放音乐
-    audioOutput = new QAudioOutput(this);
+
     //媒体播放对象
     mediaPlayer =new QMediaPlayer(this);
-    mediaPlayer->setAudioOutput(audioOutput);
+
+    playlist = new QMediaPlaylist(this);//初始化播放列表
+
+
 
     //获总的媒体时长，通过信号关联获取
     connect(mediaPlayer,&QMediaPlayer::durationChanged,this,[=](qint64 duration){ //int64 longlong 类型
@@ -22,6 +27,7 @@ Widget::Widget(QWidget *parent)
         ui->totalLabel->setText(QString("%1:%2").arg(duration/1000/60,2,10,QChar('0')).arg(duration/1000%60));
 
         ui->playCourseSlider->setRange(0,duration);
+
     });
     //获当前媒体时长，通过信号关联获取
     connect(mediaPlayer,&QMediaPlayer::positionChanged,this,[=](qint64 pos)
@@ -32,7 +38,7 @@ Widget::Widget(QWidget *parent)
     });
     //拖动进度条
     connect(ui->playCourseSlider,&QSlider::sliderMoved,mediaPlayer,&QMediaPlayer::setPosition);
-    //
+    //播放模式
 
 }
 
@@ -41,10 +47,9 @@ Widget::~Widget()
     delete ui;
 }
 
-
+// 列表播放
 void Widget::on_pushButton_clicked()
 {
-    qInfo()<<"hello student";
     //打开头文件对话框，让用户选择音乐所在的目录
     //找到存在的文件夹
     auto path =QFileDialog::getExistingDirectory(this,"请选择音乐所在目录","C:/Users/李波/Desktop/assets/music");
@@ -58,7 +63,9 @@ void Widget::on_pushButton_clicked()
 
     //把音乐路径完整保存下来为playList
     for (auto file:musicList)
-        playList.append(QUrl::fromLocalFile(path+"/"+file));
+        playlist->addMedia(QUrl::fromLocalFile(path+"/"+file));
+    mediaPlayer->setPlaylist(playlist);
+
 
 
 }
@@ -66,33 +73,25 @@ void Widget::on_pushButton_clicked()
 
 void Widget::on_pushButton_3_clicked()
 {
+/*
     if(playList.empty()){
         return ;
     }
-    switch(mediaPlayer->playbackState())
-    {
-    case QMediaPlayer::PlaybackState::StoppedState://暂停状态
-    {
-        curPlayIndex = ui->listWidget->currentRow();
-        mediaPlayer->setSource(playList[curPlayIndex]);
-        mediaPlayer->play();
-        break;
-    }
-    case QMediaPlayer::PlaybackState::PlayingState://播放状态->暂停
-    {
-        mediaPlayer->pause();
-     break;
-    }
 
-    case QMediaPlayer::PlaybackState::PausedState:
-    {
-     mediaPlayer->play();
-     break;
-    }
+*/
+    if(playFlag==false){//false 为暂停
+       ui->pushButton_3->setStyleSheet("border-image: url(:/assets/bofang3.png);");
 
+       playFlag=true;
+       mediaPlayer->pause();
+       return ;
 
     }
-
+    playFlag=false;
+    ui->pushButton_3->setStyleSheet("border-image: url(:/assets/pause.png);");
+    curPlayIndex = ui->listWidget->currentRow();
+    playlist->setCurrentIndex(curPlayIndex);
+    mediaPlayer->play();
 
 
 }
@@ -101,26 +100,29 @@ void Widget::on_pushButton_3_clicked()
 void Widget::on_pushButton_4_clicked()
 {
     //让listWidget选中下一行
-    curPlayIndex=(curPlayIndex+1)%playList.size();
+    curPlayIndex=(curPlayIndex+1)%(playlist->mediaCount());
     ui->listWidget->setCurrentRow(curPlayIndex);
-    mediaPlayer->setSource(playList[curPlayIndex]);
+    playlist->setCurrentIndex(curPlayIndex);
     mediaPlayer->play();
+
 }
 
 //上一曲
 void Widget::on_pushButton_2_clicked()
 {
+
     //让listWidget选中上一行
     //防止数组越界
     if(curPlayIndex==0){
-     curPlayIndex=playList.size()-1;
+       curPlayIndex=playlist->mediaCount()-1;
     }
     else{
      curPlayIndex--;
     }
     ui->listWidget->setCurrentRow(curPlayIndex);
-    mediaPlayer->setSource(playList[curPlayIndex]);
+    playlist->setCurrentIndex(curPlayIndex);
     mediaPlayer->play();
+
 }
 
 //双击实现播放
@@ -128,9 +130,91 @@ void Widget::on_listWidget_doubleClicked(const QModelIndex &index)
 {
     //index有行有列
     curPlayIndex=index.row();
-    mediaPlayer->setSource(playList[curPlayIndex]);
+    playlist->setCurrentIndex(curPlayIndex);
     mediaPlayer->play();
 
 
+    if(playFlag==false){//false 为暂停
+     ui->pushButton_3->setStyleSheet("border-image: url(:/assets/bofang3.png);");
+     playFlag=true;
+     mediaPlayer->pause();
+     return;
+    }
+    playFlag=false;
+    ui->pushButton_3->setStyleSheet("border-image: url(:/assets/pause.png);");
+    curPlayIndex=index.row();
+    playlist->setCurrentIndex(curPlayIndex);
+    mediaPlayer->play();
+
+
+
 }
+
+//列表播放或者单曲循环  pushButton_8
+void Widget::on_pushButton_8_clicked()
+{
+    //border-image: url(:/assets/circle1.png);
+   // border-image: url(:/assets/circle.png);
+    //列表播放
+
+    if(playMoudle==0){
+     ui->pushButton_8->setStyleSheet("border-image: url(:/assets/circle.png);");
+     playMoudle=0;
+     changePlayStyle(playMoudle);
+     //ui->pushButton_8->setIcon(QIcon("://circle.png"));
+     playMoudle=1;
+     return ;
+    }
+    //单曲循环
+    else if(playMoudle==1){
+     ui->pushButton_8->setStyleSheet("border-image: url(:/assets/circle1.png);");
+     playMoudle=1;
+     changePlayStyle(playMoudle);
+    // ui->pushButton_8->setIcon(QIcon("://circle1.png"))
+    playMoudle=2;
+     return ;
+    }
+    //随机播放
+    else {
+     ui->pushButton_8->setStyleSheet("border-image: url(:/assets/random.png);");
+     playMoudle=2;
+     changePlayStyle(playMoudle);
+     //ui->pushButton_8->setIcon(QIcon("://assets/random.png"));
+     playMoudle=0;
+     return ;
+    }
+
+
+
+}
+//播放模式
+void Widget::changePlayStyle(int playModelStyle){
+    //列表循环
+    if(playModelStyle==0){
+     playlist->setPlaybackMode(QMediaPlaylist::Loop);
+     if(mediaPlayer->position()==mediaPlayer->duration()&&mediaPlayer->position()!=0&&mediaPlayer->duration()!=0){
+         mediaPlayer->play();
+     }
+     return;
+
+    }
+    //单曲循环
+    else if(playModelStyle==1){
+    // mediaPlayer->setPlaylist(playlist);
+     playlist->setPlaybackMode(QMediaPlaylist::CurrentItemInLoop);
+
+     if(mediaPlayer->position()==mediaPlayer->duration()&&mediaPlayer->position()!=0&&mediaPlayer->duration()!=0){
+         mediaPlayer->play();
+     }
+    }
+    //随机播放
+    else if(playModelStyle==2) {
+    playlist->setPlaybackMode(QMediaPlaylist::Random);
+    if(mediaPlayer->position()==mediaPlayer->duration()&&mediaPlayer->position()!=0&&mediaPlayer->duration()!=0){
+         mediaPlayer->play();
+    }
+    }
+
+}
+
 
